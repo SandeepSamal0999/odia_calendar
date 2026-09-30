@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "odia_calendar_tmp",
-    "slug": "odia_calendar_tmp",
+    "name": "Odia Calendar 2026",
+    "slug": "odia-calendar",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,7 +11,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#EC0B6E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,6 +20,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-font"
+    ],
+    "scheme": "odiacalendar",
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
