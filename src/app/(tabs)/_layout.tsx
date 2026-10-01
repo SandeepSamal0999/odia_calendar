@@ -13,6 +13,7 @@ const TABS: Record<string, { label: keyof typeof LABELS; icon: IconName; active:
   index: { label: 'home', icon: 'home-outline', active: 'home' },
   calendar: { label: 'calendar', icon: 'calendar-outline', active: 'calendar' },
   festivals: { label: 'festivals', icon: 'star-outline', active: 'star' },
+  muhurat: { label: 'muhurat', icon: 'time-outline', active: 'time' },
   more: { label: 'more', icon: 'ellipsis-horizontal-circle-outline', active: 'ellipsis-horizontal-circle' },
 };
 
@@ -68,7 +69,8 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
         <Text style={[styles.label, styles.labelToday]}>{label('today', lang)}</Text>
       </View>
       {renderTab('festivals')}
-      {renderTab('more')}
+      {renderTab('muhurat')}
+      {/* More tab hidden for now; the route stays registered. */}
     </View>
   );
 }
@@ -79,6 +81,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="calendar" />
       <Tabs.Screen name="festivals" />
+      <Tabs.Screen name="muhurat" />
       <Tabs.Screen name="more" />
     </Tabs>
   );

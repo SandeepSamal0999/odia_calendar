@@ -47,9 +47,6 @@ export default function HomeScreen() {
         <View style={[styles.hero, { paddingTop: insets.top + 10 }]}>
           <HeroBackdrop />
           <View style={styles.heroRow}>
-            <Pressable onPress={() => router.navigate('/more')} hitSlop={10} accessibilityLabel="Menu">
-              <Ionicons name="menu" size={32} color={colors.white} />
-            </Pressable>
             <View style={{ flex: 1 }}>
               <Text style={styles.heroTitle}>
                 {label('appTitle', 'en')} {YEAR}
@@ -57,7 +54,6 @@ export default function HomeScreen() {
               <Text style={styles.heroSubtitle}>ଓଡ଼ିଆ ପଞ୍ଜିକା ୨୦୨୬</Text>
             </View>
             <RoundButton icon="globe-outline" onPress={toggleLang} label="Switch language" />
-            <RoundButton icon="settings-sharp" onPress={() => router.navigate('/more')} label="Settings" />
           </View>
         </View>
 

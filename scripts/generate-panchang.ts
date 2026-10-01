@@ -181,7 +181,7 @@ interface Day {
   rahuKaal: [string, string];
   sankranti?: { rashi: number; at: string };
   festivals: string[];
-  samples: { sunrise: Sample; midday: Sample; aparahna: Sample; sunset: Sample; midnight: Sample };
+  samples: { sunrise: Sample; midday: Sample; sunset: Sample; midnight: Sample };
 }
 
 const RAHU_SEGMENT = [8, 2, 7, 5, 6, 4, 3]; // 1-based eighth of daytime, Sun..Sat
@@ -194,7 +194,6 @@ for (let key = istDay(rangeStart); key <= istDay(rangeEnd); key = addDays(key, 1
   const sunset = riseSet(Astronomy.Body.Sun, -1, dayStart)!;
   const dayLen = sunset.getTime() - sunrise.getTime();
   const midday = new Date(sunrise.getTime() + dayLen / 2);
-  const aparahna = new Date(sunrise.getTime() + dayLen * 0.7); // middle of the 4th fifth of daytime
   const midnight = istDate(y, m, d, 23, 59);
   const at = (ms: number) => toIst(new Date(ms));
 
@@ -244,7 +243,6 @@ for (let key = istDay(rangeStart); key <= istDay(rangeEnd); key = addDays(key, 1
     samples: {
       sunrise: sample(sunrise),
       midday: sample(midday),
-      aparahna: sample(aparahna),
       sunset: sample(sunset),
       midnight: sample(midnight),
     },
@@ -306,8 +304,8 @@ const LUNAR_FESTIVALS: LunarRule[] = [
   { id: 'maha-saptami', en: 'Durga Puja · Maha Saptami', or: 'ମହାସପ୍ତମୀ', month: 6, tithi: 7, type: 'holiday' },
   { id: 'maha-ashtami', en: 'Durga Puja · Maha Ashtami', or: 'ମହାଷ୍ଟମୀ', month: 6, tithi: 8, type: 'holiday' },
   { id: 'maha-navami', en: 'Durga Puja · Maha Navami', or: 'ମହାନବମୀ', month: 6, tithi: 9, type: 'holiday' },
-  { id: 'vijaya-dashami', en: 'Vijaya Dashami · Dussehra', or: 'ବିଜୟା ଦଶମୀ · ଦଶହରା', month: 6, tithi: 10, when: 'aparahna', type: 'holiday' },
-  { id: 'kumar-purnima', en: 'Kumar Purnima', or: 'କୁମାର ପୂର୍ଣ୍ଣିମା', month: 6, tithi: 15, type: 'holiday' },
+  { id: 'vijaya-dashami', en: 'Vijaya Dashami · Dussehra', or: 'ବିଜୟା ଦଶମୀ · ଦଶହରା', month: 6, tithi: 10, type: 'holiday' },
+  { id: 'kumar-purnima', en: 'Kumar Purnima', or: 'କୁମାର ପୂର୍ଣ୍ଣିମା', month: 6, tithi: 15, when: 'sunset', type: 'holiday' },
   { id: 'diwali', en: 'Diwali · Kali Puja', or: 'ଦୀପାବଳି · କାଳୀ ପୂଜା', month: 6, tithi: 30, when: 'sunset', type: 'holiday' },
   { id: 'chhath', en: 'Chhath Puja', or: 'ଛଠ ପୂଜା', month: 7, tithi: 6 },
   { id: 'kartika-purnima', en: 'Kartika Purnima · Boita Bandana', or: 'କାର୍ତ୍ତିକ ପୂର୍ଣ୍ଣିମା · ବୋଇତ ବନ୍ଦାଣ', month: 7, tithi: 15, type: 'holiday' },
@@ -345,18 +343,29 @@ const add = (f: Festival) => {
   festivals.push({ ...f, id: f.id.endsWith(f.date) ? f.id : `${f.id}-${f.date}` });
 };
 
-// Lunar festivals: first day (per lunar month instance) whose tithi at the rule's
-// time matches; if the tithi is kshaya (skipped), the day it begins and ends in.
+/**
+ * The civil day a tithi of lunar month `lm` is observed: the first day whose tithi at
+ * `when` matches; if the tithi is kshaya (never current at that time), the day it
+ * begins and ends in.
+ */
+function tithiDay(lm: LunarMonth, tithi: number, when: When): Day | undefined {
+  const tithiOn = (i: number) => days[i]?.samples[when].tithi;
+  const hit = days.find((d) => d.samples[when].month === lm && d.samples[when].tithi === tithi);
+  if (hit) return hit;
+  const prev = tithi === 1 ? 30 : tithi - 1;
+  return days.find((d, i) => d.samples[when].month === lm && tithiOn(i) === prev && ![prev, tithi].includes(tithiOn(i + 1)!));
+}
+
+// Lunar month instance + tithi pairs already marked by a named festival.
+const covered = new Set<string>();
+const tithiKey = (lm: LunarMonth, tithi: number) => `${lunarMonths.indexOf(lm)}:${tithi}`;
+
 for (const rule of LUNAR_FESTIVALS) {
-  const when = rule.when ?? 'sunrise';
   for (const lm of lunarMonths.filter((m) => m.name === rule.month && !m.adhika)) {
-    const tithiOn = (i: number) => days[i]?.samples[when].tithi;
-    let hit = days.find((d) => d.samples[when].month === lm && d.samples[when].tithi === rule.tithi);
-    if (!hit) {
-      const prev = rule.tithi === 1 ? 30 : rule.tithi - 1;
-      hit = days.find((d, i) => d.samples[when].month === lm && tithiOn(i) === prev && ![prev, rule.tithi].includes(tithiOn(i + 1)!));
-    }
-    if (hit) add({ id: rule.id, date: hit.date, en: rule.en, or: rule.or, type: rule.type ?? 'festival' });
+    const hit = tithiDay(lm, rule.tithi, rule.when ?? 'sunrise');
+    if (!hit) continue;
+    covered.add(tithiKey(lm, rule.tithi));
+    add({ id: rule.id, date: hit.date, en: rule.en, or: rule.or, type: rule.type ?? 'festival' });
   }
 }
 
@@ -371,20 +380,40 @@ for (const s of sankrantis) {
   }
 }
 
-// Manabasa Gurubar: Thursdays of purnimanta Margashira.
+// Manabasa Gurubar: every Thursday of the Odia *solar* month Margashira (sun in
+// Vrischika, i.e. Vrischika Sankranti → Dhanu Sankranti), numbered 1st, 2nd, …
+const ORDINALS = [
+  { en: '1st', or: 'ପ୍ରଥମ' },
+  { en: '2nd', or: 'ଦ୍ୱିତୀୟ' },
+  { en: '3rd', or: 'ତୃତୀୟ' },
+  { en: '4th', or: 'ଚତୁର୍ଥ' },
+  { en: '5th', or: 'ପଞ୍ଚମ' },
+];
+let manabasaCount = 0;
 for (const d of days) {
-  if (d.weekday === 4 && d.lunar.purnimanta === 8 && !d.lunar.adhika) {
-    add({ id: `manabasa-${d.date}`, date: d.date, en: 'Manabasa Gurubar', or: 'ମାଣବସା ଗୁରୁବାର', type: 'festival' });
+  if (d.odia.month !== 7) {
+    manabasaCount = 0;
+    continue;
   }
+  if (d.weekday !== 4) continue;
+  const n = ORDINALS[manabasaCount++];
+  add({ id: `manabasa-${d.date}`, date: d.date, en: `Manabasa Gurubar (${n.en})`, or: `${n.or} ମାଣବସା ଗୁରୁବାର`, type: 'festival' });
 }
 
-// Monthly observances: Ekadashi, Purnima, Amavasya.
-for (const d of days) {
-  const t = d.tithi.n;
-  const already = festivals.some((f) => f.date === d.date && f.type !== 'vrat');
-  if (t === 11 || t === 26) add({ id: `ekadashi-${d.date}`, date: d.date, en: 'Ekadashi', or: 'ଏକାଦଶୀ', type: 'vrat' });
-  if (!already && t === 15) add({ id: `purnima-${d.date}`, date: d.date, en: 'Purnima', or: 'ପୂର୍ଣ୍ଣିମା', type: 'vrat' });
-  if (!already && t === 30) add({ id: `amavasya-${d.date}`, date: d.date, en: 'Amavasya', or: 'ଅମାବାସ୍ୟା', type: 'vrat' });
+// Monthly observances — one per tithi, not per sunrise (a tithi can span two sunrises),
+// skipped where a named festival already marks the same tithi (e.g. Snana Purnima).
+const OBSERVANCES = [
+  { tithi: 11, id: 'ekadashi', en: 'Ekadashi', or: 'ଏକାଦଶୀ' },
+  { tithi: 15, id: 'purnima', en: 'Purnima', or: 'ପୂର୍ଣ୍ଣିମା' },
+  { tithi: 26, id: 'ekadashi', en: 'Ekadashi', or: 'ଏକାଦଶୀ' },
+  { tithi: 30, id: 'amavasya', en: 'Amavasya', or: 'ଅମାବାସ୍ୟା' },
+];
+for (const lm of lunarMonths) {
+  for (const o of OBSERVANCES) {
+    if (covered.has(tithiKey(lm, o.tithi))) continue;
+    const hit = tithiDay(lm, o.tithi, 'sunrise');
+    if (hit) add({ id: o.id, date: hit.date, en: o.en, or: o.or, type: 'vrat' });
+  }
 }
 
 FIXED_FESTIVALS.forEach((f, i) => add({ id: `fixed-${i}`, ...f }));

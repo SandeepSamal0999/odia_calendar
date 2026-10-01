@@ -10,6 +10,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.promantia.odiacalendar",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#EC0B6E",
         "foregroundImage": "./assets/android-icon-foreground.png",
