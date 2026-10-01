@@ -10,13 +10,12 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.promantia.odiacalendar",
+      "package": "com.samallabs.odiacalendar",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#EC0B6E",
+        "backgroundColor": "#E20E4A",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundImage": "./assets/android-icon-background.png"
       },
       "predictiveBackGestureEnabled": false
     },
