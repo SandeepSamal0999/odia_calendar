@@ -50,13 +50,23 @@ export interface PanchangDay {
 export const YEAR: number = data.year;
 export const LOCATION = data.location;
 export const DAYS = data.days as PanchangDay[];
-export const FESTIVALS = data.festivals as Festival[];
+const TYPE_ORDER: FestivalType[] = ['holiday', 'festival', 'sankranti', 'vrat'];
+
+/**
+ * Festivals sorted by date (holidays first within a day). The festival list is the
+ * single source of truth: festivals are matched to days by `date`, so entries edited
+ * by hand in the JSON show up without updating each day's `festivals` ids.
+ */
+export const FESTIVALS = [...(data.festivals as Festival[])].sort(
+  (a, b) => a.date.localeCompare(b.date) || TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type),
+);
 
 const dayIndex = new Map(DAYS.map((d) => [d.date, d]));
-const festivalIndex = new Map(FESTIVALS.map((f) => [f.id, f]));
+const festivalsByDate = new Map<string, Festival[]>();
+for (const f of FESTIVALS) festivalsByDate.set(f.date, [...(festivalsByDate.get(f.date) ?? []), f]);
 
 export const getDay = (date: string) => dayIndex.get(date);
-export const festivalsOn = (day: PanchangDay) => day.festivals.map((id) => festivalIndex.get(id)!);
+export const festivalsOn = (day: PanchangDay) => festivalsByDate.get(day.date) ?? [];
 export const isMajor = (f: Festival) => f.type === 'holiday' || f.type === 'festival';
 
 /** Days of a Gregorian month (0-based month). */
